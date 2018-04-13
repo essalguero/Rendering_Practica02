@@ -163,8 +163,6 @@ esqueleto_practica2/lib/include/imageio\.h
 
 esqueleto_practica2/lib/include/lights\.h
 
-esqueleto_practica2/lib/include/lights/arealight\.h
-
 esqueleto_practica2/lib/include/lights/pointlight\.h
 
 esqueleto_practica2/lib/include/material\.h
@@ -190,8 +188,6 @@ esqueleto_practica2/lib/include/stringprint\.h
 esqueleto_practica2/lib/include/transform\.h
 
 esqueleto_practica2/lib/include/world\.h
-
-esqueleto_practica2/lights/area_light\.cpp
 
 esqueleto_practica2/lights/point_light\.cpp
 
@@ -847,8 +843,6 @@ rendering_lib/include/imageio\.h
 
 rendering_lib/include/lights\.h
 
-rendering_lib/include/lights/arealight\.h
-
 rendering_lib/include/lights/pointlight\.h
 
 rendering_lib/include/material\.h
@@ -878,3 +872,7 @@ rendering_lib/include/world\.h
 whitted_scene/data/pattern\.tga
 
 whitted_scene/scene\.dgc
+
+rendering_lib/include/lights/arealight\.h
+
+esqueleto_practica2/lib/include/lights/arealight\.h
