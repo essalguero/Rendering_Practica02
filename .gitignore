@@ -11,8 +11,6 @@ esqueleto_practica2/brdfs/blinn\.h
 
 esqueleto_practica2/brdfs/blinnphong\.h
 
-esqueleto_practica2/brdfs/lambert\.h
-
 esqueleto_practica2/brdfs/standard\.h
 
 esqueleto_practica2/deploy/x64/Debug/rendering\.exp
