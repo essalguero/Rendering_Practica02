@@ -880,3 +880,21 @@ esqueleto_practica1/bin/render_launcher\.exe
 esqueleto_practica1\.zip
 
 esqueleto_practica2/bin/render_launcher\.exe
+
+esqueleto_practica2/\.vs/rendering/v15/\.suo
+
+esqueleto_practica2/\.vs/rendering/v15/Browse\.VC\.db
+
+esqueleto_practica2/\.vs/rendering/v15/Browse\.VC\.opendb
+
+esqueleto_practica2/\.vs/rendering/v15/ipch/AutoPCH/8d15c70fec0b95ba/MAIN\.ipch
+
+esqueleto_practica2/bin/rendering\.dll
+
+esqueleto_practica2/bin/x64/Debug/rendering\.dll
+
+esqueleto_practica2/bin/x64/Debug/rendering\.ilk
+
+esqueleto_practica2/deploy/x64/Debug/rendering\.dll
+
+esqueleto_practica2/deploy/x64/Debug/rendering\.lib
