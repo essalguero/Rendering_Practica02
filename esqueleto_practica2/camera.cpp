@@ -1,11 +1,11 @@
 #include <camera.h>
 
-gmtl::Rayf Camera::generateRay(float pixelX, float pixelY) { 
+gmtl::Rayf Camera::generateRay(float pixelX, float pixelY) {
 	// ray generated
 	gmtl::Rayf ray;
 
 	// Camera position in camera coordinates system
-	gmtl::Point3f cameraPosition(0, 0, 0); 
+	gmtl::Point3f cameraPosition(0, 0, 0);
 
 	// Position of the point in the raster
 	gmtl::Point3f rasterPositionPoint(pixelX, pixelY, 0);
@@ -14,8 +14,8 @@ gmtl::Rayf Camera::generateRay(float pixelX, float pixelY) {
 	Transform mvp = mCameraToWorld * mRasterToCamera;
 
 	// Transforms the points
-	gmtl::Point3f cameraInWorld = mCameraToWorld(cameraPosition); 
-	gmtl::Point3f pointInWorld = mvp(rasterPositionPoint); 
+	gmtl::Point3f cameraInWorld = mCameraToWorld(cameraPosition);
+	gmtl::Point3f pointInWorld = mvp(rasterPositionPoint);
 
 	// set the direction of the ray
 	ray.setOrigin(cameraInWorld);
@@ -24,21 +24,21 @@ gmtl::Rayf Camera::generateRay(float pixelX, float pixelY) {
 	ray.setDir(pixelDir);
 
 
-	return ray; 
+	return ray;
 }
 
 
 gmtl::Point2ui Camera::getResolution() const
 {
-    return mResolution;
+	return mResolution;
 }
 
 void Camera::setOutputPath(const char* filename)
 {
-    mOutputPath = filename;
+	mOutputPath = filename;
 }
 
 const char* Camera::getOutputPath() const
 {
-    return mOutputPath.c_str();
+	return mOutputPath.c_str();
 }
