@@ -900,3 +900,11 @@ esqueleto_practica2/deploy/x64/Debug/rendering\.dll
 esqueleto_practica2/deploy/x64/Debug/rendering\.lib
 
 esqueleto_practica2/\.vs/rendering/v15/ipch/AutoPCH/9d62d33680123cf8/CAMERA\.ipch
+
+esqueleto_practica2/\.vs/rendering/v15/ipch/AutoPCH/a83237de5b41aa65/POINT_LIGHT\.ipch
+
+esqueleto_practica2/\.vs/rendering/v15/ipch/AutoPCH/fa8dbfe9648491a6/AREA_LIGHT\.ipch
+
+esqueleto_practica2/bin/image\.tga
+
+esqueleto_practica2/bin/renderin_old\.dll
