@@ -225,18 +225,30 @@ Spectrum traceRay(World* world, Ray& ray, int recursivityDepth = 0)
 			//const gmtl::Point3f& position, gmtl::Vec3f& wi, float& pdf, gmtl::Rayf& visibilityRay
 			Spectrum colorSample = (*light)->Sample(info.position, wi, pdf, visibilityRay);
 
-			gmtl::Vec3f distanceVector = info.position + wi;
+			//gmtl::Vec3f distanceVector = info.position + wi;
 
-			float squareLightDistanceToCollision = gmtl::lengthSquared(distanceVector);
+			//float squareLightDistanceToCollision = gmtl::lengthSquared(distanceVector);
 			// Not using emissive objects
 			//totalLight += calculateLe(world, areaLight, info);
 
 			//std::cout << "Calculated light" << std::endl;
 
-			colorSample /= squareLightDistanceToCollision;
-			info.material->Sample(wi, pdf, info);
-			totalLight += info.material->BRDF(colorSample, info.position, info.position, info);
-			//totalLight += colorSample;
+			//colorSample /= squareLightDistanceToCollision;
+
+			// Calculate shadows
+			IntersectInfo shadowInfo;
+			gmtl::Rayf newRay = visibilityRay;
+			newRay.setOrigin(newRay.getOrigin() + (newRay.getDir() * 0.01f));
+			world->intersect(shadowInfo, newRay);
+
+			//world->intersect(shadowInfo, visibilityRay);
+			
+
+			if (!world->shadow(newRay))
+			{
+				info.material->Sample(wi, pdf, info);
+				totalLight += info.material->BRDF(colorSample, info.position, info.position, info);
+			}
 		}
 
 		
