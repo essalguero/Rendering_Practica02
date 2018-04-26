@@ -239,15 +239,16 @@ Spectrum traceRay(World* world, Ray& ray, int recursivityDepth = 0)
 			IntersectInfo shadowInfo;
 			gmtl::Rayf newRay = visibilityRay;
 			newRay.setOrigin(newRay.getOrigin() + (newRay.getDir() * 0.01f));
-			world->intersect(shadowInfo, newRay);
+			//world->intersect(shadowInfo, newRay);
 
 			//world->intersect(shadowInfo, visibilityRay);
 			
 
+
 			if (!world->shadow(newRay))
 			{
-				info.material->Sample(wi, pdf, info);
-				totalLight += info.material->BRDF(colorSample, info.position, info.position, info);
+				//info.material->Sample(wi, pdf, info);
+				totalLight += info.material->BRDF(colorSample, info.position, info.position, info) * max(gmtl::dot(info.normal, wi), 0.0f) / pdf;
 			}
 		}
 

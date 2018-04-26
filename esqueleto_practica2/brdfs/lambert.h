@@ -12,15 +12,27 @@ public:
 	float Kd;
 	Color Kd_color;
 
+	// color
+	//Li Luz quye entra
+	//L direccion en la luz
+	//V la dirección en la que se mira
+
     virtual Spectrum BRDF(const Spectrum& Li, const gmtl::Vec3f& L, const gmtl::Vec3f& V, const IntersectInfo& info) const
     {
-        return Spectrum(0.0f);
+        //return Spectrum(0.0f);
+		return Li * Kd_color.GetColor(info) * (Kd / M_PI);
     }
+
+
+	// Indirect light
     virtual bool Sample(gmtl::Vec3f& wi, float& pdf, const IntersectInfo& info) const
     {
+
         return false;
     }
 
+
+	// Solo sirve para multiple importance sampling
     virtual float pdf(const gmtl::Vec3f& wi, const gmtl::Vec3f& wo) const
     {
         return 0.0f;
