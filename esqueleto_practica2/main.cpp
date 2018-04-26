@@ -62,34 +62,6 @@ gmtl::Rayf generateRay(gmtl::Point3f initialPosition, gmtl::Point3f finalPositio
 	return ray;
 }
 
-Spectrum calculateLe(World* world, AreaLight* light, IntersectInfo& intersectInfo)
-{
-	Point3f lightPosition = light->getWorldPosition();
-	Vector3f lightVector = Vector3f(lightPosition[0], lightPosition[1], lightPosition[2]);
-
-	Vector3f intersectVector = Vector3f(intersectInfo.position[0], intersectInfo.position[1], intersectInfo.position[2]);
-
-	Vector3f distanceVector = intersectVector - lightVector;
-	float squareLightDistanceToCollision = distanceVector[0] * distanceVector[0] + distanceVector[1] * distanceVector[1] + distanceVector[2] * distanceVector[2];
-
-	Vector3f directionLight = lightPosition - intersectInfo.position;
-	normalize(directionLight);
-
-	Vector3f normalNormalized = intersectInfo.normal;
-	normalize(normalNormalized);
-
-	float productoEscalar = gmtl::dot(normalNormalized, directionLight);
-
-	float valorCoseno = productoEscalar > 0.0f ? productoEscalar : 0.0f;
-
-
-	Standard* material = (Standard *)intersectInfo.material;
-	Spectrum colorDifuso = material->Kd.GetColor(intersectInfo);
-
-	return Spectrum(colorDifuso[0] * (light->mIntensity / squareLightDistanceToCollision) * valorCoseno,
-		colorDifuso[1] * (light->mIntensity / squareLightDistanceToCollision) * valorCoseno,
-		colorDifuso[2] * (light->mIntensity / squareLightDistanceToCollision) * valorCoseno);
-}
 
 
 Spectrum calculateDiffuseComponent(World* world, PointLight* light, IntersectInfo& intersectInfo)
@@ -243,11 +215,28 @@ Spectrum traceRay(World* world, Ray& ray, int recursivityDepth = 0)
 		//Light* light = world->mLights.at(0);
 		for (auto light = world->mLights.begin(); light != world->mLights.end(); ++light)
 		{
+			gmtl::Vec3f wi;
+			float pdf;
+			gmtl::Rayf visibilityRay;
+
 			//std::cout << "calculating lights" << std::endl;
 
-			AreaLight* areaLight = (AreaLight*)(*light);
+			//AreaLight* areaLight = (AreaLight*)(*light);
+			//const gmtl::Point3f& position, gmtl::Vec3f& wi, float& pdf, gmtl::Rayf& visibilityRay
+			Spectrum colorSample = (*light)->Sample(info.position, wi, pdf, visibilityRay);
 
-			totalLight += calculateLe(world, areaLight, info);
+			gmtl::Vec3f distanceVector = info.position + wi;
+
+			float squareLightDistanceToCollision = gmtl::lengthSquared(distanceVector);
+			// Not using emissive objects
+			//totalLight += calculateLe(world, areaLight, info);
+
+			//std::cout << "Calculated light" << std::endl;
+
+			colorSample /= squareLightDistanceToCollision;
+			info.material->Sample(wi, pdf, info);
+			totalLight += info.material->BRDF(colorSample, info.position, info.position, info);
+			//totalLight += colorSample;
 		}
 
 		
