@@ -26,12 +26,15 @@
 
 #include <iostream>
 
+#include <time.h>
 
 int g_RenderMaxDepth = 12;
 
 extern int g_pixel_samples;
 
 const float AMBIENT_INTENSITY = 0.005f;
+
+const float GO_ON_PROBABILITY = 0.1f;
 
 World* ReadFromFile(const char* filename)
 {
@@ -44,6 +47,35 @@ World* ReadFromFile(const char* filename)
 	return world;
 }
 
+
+
+float Halton(int index, int base)
+{
+	float result = 0.0f;
+	float f = 1.0f / base;
+	int i = index;
+	while (i > 0)
+	{
+		result += f * (i % base);
+		i = i / base;
+		f = f / base;
+	}
+	return result;
+}
+
+
+bool calculateNextRay(float probability)
+{
+
+	float randValue = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+
+	//std::cout << randValue << std::endl;
+
+	if (randValue < probability)
+		return true;
+
+	return false;
+}
 
 
 gmtl::Rayf generateRay(gmtl::Point3f initialPosition, gmtl::Point3f finalPosition) {
@@ -197,8 +229,25 @@ gmtl::Vec3f transmittedDirection(bool& entering, const gmtl::Vec3f& N, const gmt
 
 
 
+// - Intersección con la escena
+// - Calcular luminación emitida
+// - Calcular luminación directa
+// - Calcular luminación indirecta
+// - iluminación total = emitida + directa + indirecta
 
 
+// traceRay()
+// - Intersección con la escena
+// - Calcular luminación emitida
+// - Calcular valor aleatorio X
+// - Si X < ruleta_rusa_p
+	// - Calcular una dirección para siguiente rebote
+	// - Calcular iluminación para ese rayo(traceRay)
+	// - Multiplicar iluminación por el BRDF
+	// - Multiplicar por el coseno
+	// - Dividir iluminación por el PDF
+// - Iluminación total = emitida + rebote
+// - Devolver iluminación total calculada
 
 
 Spectrum traceRay(World* world, Ray& ray, int recursivityDepth = 0)
@@ -243,7 +292,11 @@ Spectrum traceRay(World* world, Ray& ray, int recursivityDepth = 0)
 
 			//world->intersect(shadowInfo, visibilityRay);
 			
-
+			if (calculateNextRay(GO_ON_PROBABILITY))
+			{
+				//std::cout << "Continue" << std::endl;
+				continue;
+			}
 
 			if (!world->shadow(newRay))
 			{
@@ -279,8 +332,15 @@ void render_image(World* world, unsigned int dimX, unsigned int dimY, float* ima
 			//Calcular rayo desde cámara a pixel
 			Ray ray = camera->generateRay(j, i);
 
+
+			// Halton para emitir varios rayos por pixel
+
+			// Probabilidad para seguir trazando rayos por el mismo pixel
+
+			// Calcular iluminación del rayo
 			Spectrum totalColor = traceRay(world, ray, 1);
 
+			// Guardar iluminación para el pixel en imagen
 			image[(i * dimX * 3) + (j * 3)] = totalColor[0];
 			image[(i * dimX * 3) + (j * 3) + 1] = totalColor[1];
 			image[(i * dimX * 3) + (j * 3) + 2] = totalColor[2];
