@@ -9,11 +9,11 @@ public:
 	Lambert(const char* name) : Material(name), Kd_color(0.0f), Kd(1.0f) {}
 	Lambert(const char* name, float kd, const Color& kd_color) : Material(name), Kd(kd), Kd_color(kd_color) {}
 
-	float Kd;
-	Color Kd_color;
+	float Kd;		// Constante difusa
+	Color Kd_color; // Color
 
 	// color
-	//Li Luz quye entra
+	//Li Luz que entra
 	//L direccion en la luz
 	//V la dirección en la que se mira
 
@@ -35,7 +35,10 @@ public:
 	// Solo sirve para multiple importance sampling
     virtual float pdf(const gmtl::Vec3f& wi, const gmtl::Vec3f& wo) const
     {
-        return 0.0f;
+        //return 0.0f;
+		//return 1.0f;
+
+		return 1.0f / (2 * M_PI);
     }
 };
 
