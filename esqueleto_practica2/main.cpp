@@ -294,7 +294,7 @@ Spectrum traceRay(World* world, Ray& ray, int recursivityDepth = 0)
 			
 			if (calculateNextRay(GO_ON_PROBABILITY))
 			{
-				//std::cout << "Continue" << std::endl;
+				// Trace new rays
 				continue;
 			}
 
