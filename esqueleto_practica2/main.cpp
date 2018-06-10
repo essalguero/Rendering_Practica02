@@ -36,6 +36,12 @@ const float AMBIENT_INTENSITY = 0.005f;
 
 const float GO_ON_PROBABILITY = 0.1f;
 
+const int NUMBER_SAMPLES = 1;
+
+const int HALTON_NUMBER_1 = 3;
+const int HALTON_NUMBER_2 = 5;
+
+
 World* ReadFromFile(const char* filename)
 {
 	World* world;
@@ -296,6 +302,7 @@ Spectrum traceRay(World* world, Ray& ray, int recursivityDepth = 0)
 			{
 				// Trace new rays
 				continue;
+
 			}
 
 			if (!world->shadow(newRay))
@@ -332,13 +339,29 @@ void render_image(World* world, unsigned int dimX, unsigned int dimY, float* ima
 			//Calcular rayo desde cámara a pixel
 			Ray ray = camera->generateRay(j, i);
 
+			Spectrum totalColor = Spectrum(0, 0, 0);
+
+			for (int rayNumber = 0; rayNumber < NUMBER_SAMPLES; rayNumber++)
+			{
+				float halton_1 = Halton(rayNumber, HALTON_NUMBER_1);
+				float halton_2 = Halton(rayNumber, HALTON_NUMBER_2);
+
+				//Calcular rayo desde cámara a pixel
+				ray = camera->generateRay(j + halton_1, i + halton_2);
+
+				totalColor += traceRay(world, ray, 1);
+			}
+
+			totalColor[0] = totalColor[0] / NUMBER_SAMPLES;
+			totalColor[1] = totalColor[1] / NUMBER_SAMPLES;
+			totalColor[2] = totalColor[2] / NUMBER_SAMPLES;
 
 			// Halton para emitir varios rayos por pixel
 
 			// Probabilidad para seguir trazando rayos por el mismo pixel
 
 			// Calcular iluminación del rayo
-			Spectrum totalColor = traceRay(world, ray, 1);
+			//Spectrum totalColor = traceRay(world, ray, 1);
 
 			// Guardar iluminación para el pixel en imagen
 			image[(i * dimX * 3) + (j * 3)] = totalColor[0];
