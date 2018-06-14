@@ -38,7 +38,7 @@ const float AMBIENT_INTENSITY = 0.005f;
 
 const float GO_ON_PROBABILITY = 0.3f;
 
-const int NUMBER_SAMPLES = 2;
+const int NUMBER_SAMPLES = 50;
 
 const int HALTON_NUMBER_1 = 3;
 const int HALTON_NUMBER_2 = 5;
@@ -282,17 +282,19 @@ Spectrum directRadiance(World* world, Ray& ray, IntersectInfo info)
 		//world->shadow(visibilityRay);
 
 
-		// Interseccón con la escena
+		// Interseccón con la escena para comprobar si desde el punto, la luz se ve
 		IntersectInfo newIntersectInfo;
-		//visibilityRay.setOrigin(visibilityRay.getOrigin() + 0.01f * visibilityRay.getDir());
+		//visibilityRay.setOrigin(visibilityRay.getOrigin() + 0.001f * visibilityRay.getDir());
 		world->intersect(newIntersectInfo, visibilityRay);
 
-		// Si no Interseccion
+		// Si no Interseccion, la luz se ve
 		if (newIntersectInfo.objectID == -1)
 		{
 			// Obtener emision de la luz
 			//info.material->BRDF(colorSample, info.position, info.position, info) * max(gmtl::dot(info.normal, wi), 0.0f) / pdf;
 			//Spectrum directLight = calculateDiffuseComponent(world, static_cast<PointLight*>(world->mLights.at(lightNumber)), newIntersectInfo);
+
+			Spectrum directLight = world->mLights.at(lightNumber)->mColor * (world->mLights.at(lightNumber)->mIntensity / (visibilityRay.getMaxLength() * visibilityRay.getMaxLength()));
 
 			/*gmtl::Vec3f distanceVector = info.position + wi;
 			float squareLightDistanceToCollision = gmtl::lengthSquared(distanceVector);
@@ -302,14 +304,15 @@ Spectrum directRadiance(World* world, Ray& ray, IntersectInfo info)
 
 			// Multiplicar por BRDF
 			//directLight = directLight * newIntersectInfo.material->BRDF(directLight, info.position, info.position, info);
-			Spectrum directLight = info.material->BRDF(lightSample, info.position, info.position, info);
+			directLight *= info.material->BRDF(lightSample, info.position, info.position, info);
 
 			// Dividir por PDF
 			gmtl::Vec3f wo;
 			directLight = directLight / info.material->pdf(wi, wo);
 
 			// Dividir por 1 / numero_luces
-			directLight = directLight / static_cast<float>(1 / world->mLights.size());
+			directLight = (directLight / static_cast<float>(1 / world->mLights.size()));
+			directLight = directLight / sqrt(wi[0] * wi[0] + wi[1] * wi[1] + wi[2] * wi[2]);
 
 			return directLight;
 		}
@@ -347,7 +350,8 @@ Spectrum indirectRadiance(World* world, Ray& ray, IntersectInfo info, int recurs
 		gmtl::Rayf indirectRay = generateRay(info.position, finalPosition);
 
 		// - Calcular iluminación para ese rayo(traceRay)
-		indirectLight = indirectLight * traceRay(world, indirectRay, recursivityDepth + 1);
+		//indirectLight = indirectLight * traceRay(world, indirectRay, recursivityDepth + 1);
+		indirectLight = traceRay(world, indirectRay, recursivityDepth + 1);
 
 		// - Multiplicar iluminación por el BRDF
 		indirectLight = indirectLight * info.material->BRDF(indirectLight, info.position, info.position, info);
@@ -519,7 +523,7 @@ void render_image(World* world, unsigned int dimX, unsigned int dimY, float* ima
 
 	srand(time(NULL));
 
-#pragma omp parallel for schedule(dynamic)
+//#pragma omp parallel for schedule(dynamic)
 	for (int i = 0; i < dimY; ++i)
 	{
 		for (int j = 0; j < dimX; ++j)
