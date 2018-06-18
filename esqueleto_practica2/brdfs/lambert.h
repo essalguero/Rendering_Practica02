@@ -27,8 +27,12 @@ public:
 	// Indirect light
     virtual bool Sample(gmtl::Vec3f& wi, float& pdf, const IntersectInfo& info) const
     {
+		wi = info.ray.getDir();
+		gmtl::Vec3f wo;
 
-        return false;
+		pdf = this->pdf(wi, wo);
+
+        return true;
     }
 
 

@@ -93,16 +93,16 @@ return false;
 }*/
 
 
-gmtl::Rayf generateRay(gmtl::Point3f initialPosition, gmtl::Point3f finalPosition) {
+gmtl::Rayf generateRay(gmtl::Point3f origin, gmtl::Point3f secondPoint) {
 	// ray generated
 	gmtl::Rayf ray;
 
 	// set the direction of the ray
 
 	// Direction to the light being taken into account
-	gmtl::Vec3f direction(finalPosition - initialPosition);
+	gmtl::Vec3f direction(secondPoint - origin);
 	normalize(direction);
-	ray.setOrigin(initialPosition + direction * 0.01f);
+	ray.setOrigin(origin + direction * 0.01f);
 	//ray.setOrigin(initialPosition);
 	ray.setDir(direction);
 
@@ -277,10 +277,14 @@ Spectrum directRadiance(World* world, Ray& ray, IntersectInfo info)
 		gmtl::Vec3f wi;
 		float pdf;
 		gmtl::Rayf visibilityRay;
+
+		// Devuelve la luz -> color * (intensidad / (distancia * distancia))
 		Spectrum lightSample = world->mLights.at(lightNumber)->Sample(info.position, wi, pdf, visibilityRay);
 
 		//world->shadow(visibilityRay);
 
+		//Desplazar VisibilityRay sobre la normal para evitar colisiones con el propio objeto
+		visibilityRay.setOrigin(visibilityRay.getOrigin() + info.normal * 0.001f);
 
 		// Interseccón con la escena
 		IntersectInfo newIntersectInfo;
@@ -290,6 +294,7 @@ Spectrum directRadiance(World* world, Ray& ray, IntersectInfo info)
 		// Si no Interseccion
 		if (newIntersectInfo.objectID == -1)
 		{
+			//float intensityCalculated = world->mLights.at(lightNumber)->mIntensity / (visibilityRay.getMaxLength() * visibilityRay.getMaxLength());
 			// Obtener emision de la luz
 			//info.material->BRDF(colorSample, info.position, info.position, info) * max(gmtl::dot(info.normal, wi), 0.0f) / pdf;
 			//Spectrum directLight = calculateDiffuseComponent(world, static_cast<PointLight*>(world->mLights.at(lightNumber)), newIntersectInfo);
@@ -302,11 +307,11 @@ Spectrum directRadiance(World* world, Ray& ray, IntersectInfo info)
 
 			// Multiplicar por BRDF
 			//directLight = directLight * newIntersectInfo.material->BRDF(directLight, info.position, info.position, info);
-			Spectrum directLight = info.material->BRDF(lightSample, info.position, info.position, info);
+			Spectrum directLight = info.material->BRDF(lightSample, ray.getDir(), ray.getOrigin(), info);
+			//Spectrum directLight = info.material->BRDF(lightSample, ray.getDir(), ray.getOrigin(), info) * intensityCalculated;
 
-			// Dividir por PDF
-			gmtl::Vec3f wo;
-			directLight = directLight / info.material->pdf(wi, wo);
+			// Dividir por PDF de la luz
+			directLight = directLight / pdf;
 
 			// Dividir por 1 / numero_luces
 			directLight = directLight / static_cast<float>(1 / world->mLights.size());
@@ -342,26 +347,30 @@ Spectrum indirectRadiance(World* world, Ray& ray, IntersectInfo info, int recurs
 		float y = sin(anglePhi) * (sqrt(valueToSqrt));
 		float z = r2;
 
-		gmtl::Point3f finalPosition = gmtl::Point3f(x, y, z) - info.position;
+		gmtl::Point3f positionInDirectionVector = gmtl::Point3f(x, y, z) - info.position;
 
-		gmtl::Rayf indirectRay = generateRay(info.position, finalPosition);
+		gmtl::Rayf indirectRay = generateRay(info.position, positionInDirectionVector);
 
 		// - Calcular iluminación para ese rayo(traceRay)
 		indirectLight = indirectLight * traceRay(world, indirectRay, recursivityDepth + 1);
 
 		// - Multiplicar iluminación por el BRDF
-		indirectLight = indirectLight * info.material->BRDF(indirectLight, info.position, info.position, info);
+		indirectLight = indirectLight * info.material->BRDF(indirectLight, ray.getDir(), ray.getOrigin(), info);
 
 		// - Multiplicar por el coseno
 		indirectLight = indirectLight * gmtl::dot(indirectRay.getDir(), info.normal);
 
 		// - Dividir iluminación por el PDF
-		gmtl::Vec3f wi = indirectRay.getDir();
-		gmtl::Vec3f wo;
-		indirectLight = indirectLight / info.material->pdf(wi, wo);
+		gmtl::Vec3f wi;
+		float pdf;
+		info.material->Sample(wi, pdf, info);
+
+		indirectLight = indirectLight / pdf;
 
 		// - Dividir por ruleta_rusa_p
 		indirectLight = indirectLight / GO_ON_PROBABILITY;
+
+		return indirectLight;
 	}
 	return Spectrum(0.0f);
 }
