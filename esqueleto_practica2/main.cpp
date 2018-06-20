@@ -38,7 +38,7 @@ const float AMBIENT_INTENSITY = 0.005f;
 
 const float GO_ON_PROBABILITY = 0.3f;
 
-const int NUMBER_SAMPLES = 2;
+const int NUMBER_SAMPLES = 50;
 
 const int HALTON_NUMBER_1 = 3;
 const int HALTON_NUMBER_2 = 5;
@@ -332,7 +332,8 @@ Spectrum indirectRadiance(World* world, Ray& ray, IntersectInfo info, int recurs
 	// - Si X < ruleta_rusa_p
 	if (valorContinuacion < GO_ON_PROBABILITY)
 	{
-		Spectrum indirectLight = ((Lambert*)info.material)->Kd_color.GetColor(info);
+		//Spectrum indirectLight = ((Lambert*)info.material)->Kd_color.GetColor(info);
+		Spectrum indirectLight = gmtl::Vec3f(1.0f, 1.0f, 1.0f);
 
 		// - Calcular una dirección para siguiente rebote
 		float r1 = ruletaRusa();
