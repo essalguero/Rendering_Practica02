@@ -36,9 +36,9 @@ extern int g_pixel_samples;
 
 const float AMBIENT_INTENSITY = 0.005f;
 
-const float GO_ON_PROBABILITY = 0.3f;
+const float GO_ON_PROBABILITY = 0.1f;
 
-const int NUMBER_SAMPLES = 50;
+const int NUMBER_SAMPLES = 200;
 
 const int HALTON_NUMBER_1 = 3;
 const int HALTON_NUMBER_2 = 5;
@@ -307,8 +307,9 @@ Spectrum directRadiance(World* world, Ray& ray, IntersectInfo info)
 
 			// Multiplicar por BRDF
 			//directLight = directLight * newIntersectInfo.material->BRDF(directLight, info.position, info.position, info);
-			Spectrum directLight = info.material->BRDF(lightSample, ray.getDir(), ray.getOrigin(), info);
-			//Spectrum directLight = info.material->BRDF(lightSample, ray.getDir(), ray.getOrigin(), info) * intensityCalculated;
+			//Spectrum directLight = info.material->BRDF(lightSample, ray.getDir(), ray.getOrigin(), info);
+			Spectrum directLight = info.material->BRDF(lightSample, wi, -ray.getDir(), info);
+			//Spectrum directLight = info.material->BRDF(lightSample, wi, cameraPosition, info);
 
 			// Dividir por PDF de la luz
 			directLight = directLight / pdf;
@@ -348,15 +349,17 @@ Spectrum indirectRadiance(World* world, Ray& ray, IntersectInfo info, int recurs
 		float y = sin(anglePhi) * (sqrt(valueToSqrt));
 		float z = r2;
 
-		gmtl::Point3f positionInDirectionVector = gmtl::Point3f(x, y, z) - info.position;
+		//gmtl::Point3f positionInDirectionVector = gmtl::Point3f(x, y, z) - info.position; //generateRay(info.position, positionInDirectionVector);
 
-		gmtl::Rayf indirectRay = generateRay(info.position, positionInDirectionVector);
+		gmtl::Rayf indirectRay = gmtl::Rayf(info.position, gmtl::Vec3f(x, y, z)); 
+		indirectRay.setOrigin(indirectRay.getOrigin() - info.normal * 0.001f);
 
 		// - Calcular iluminación para ese rayo(traceRay)
 		indirectLight = indirectLight * traceRay(world, indirectRay, recursivityDepth + 1);
 
 		// - Multiplicar iluminación por el BRDF
-		indirectLight = indirectLight * info.material->BRDF(indirectLight, ray.getDir(), ray.getOrigin(), info);
+		//indirectLight = indirectLight * info.material->BRDF(indirectLight, ray.getDir(), ray.getOrigin(), info);
+		indirectLight = indirectLight * info.material->BRDF(indirectLight, indirectRay.getDir(), ray.getDir(), info);
 
 		// - Multiplicar por el coseno
 		indirectLight = indirectLight * gmtl::dot(indirectRay.getDir(), info.normal);
@@ -403,7 +406,7 @@ Spectrum traceRay(World* world, Ray& ray, int recursivityDepth)
 	return Spectrum(0.0f);
 }
 
-Spectrum traceRay2(World* world, Ray& ray, int recursivityDepth = 0)
+Spectrum traceRay2(World* world, Ray& ray, gmtl::Vec3f cameraPosition, int recursivityDepth = 0)
 {
 	IntersectInfo info;
 
