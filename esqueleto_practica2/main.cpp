@@ -38,7 +38,7 @@ const float AMBIENT_INTENSITY = 0.005f;
 
 const float GO_ON_PROBABILITY = 0.1f;
 
-const int NUMBER_SAMPLES = 200;
+const int NUMBER_SAMPLES = 1024;
 
 const int HALTON_NUMBER_1 = 3;
 const int HALTON_NUMBER_2 = 5;
@@ -399,8 +399,10 @@ Spectrum traceRay(World* world, Ray& ray, int recursivityDepth)
 		Spectrum indirectLight = indirectRadiance(world, ray, info, recursivityDepth);
 		//indirectLight = Spectrum(0.0f);
 
+		float distance = sqrt(info.position[0] * info.position[0] + info.position[1] * info.position[1] + info.position[2] * info.position[2]);
+
 		// Iluminacion total = emitida + directa + indirecta
-		return directLight + indirectLight;
+		return (directLight + indirectLight);
 	}
 
 	return Spectrum(0.0f);
