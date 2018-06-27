@@ -275,15 +275,15 @@ Spectrum directRadiance(World* world, Ray& ray, IntersectInfo info)
 
 		// Samplear un punto de esa luz
 		gmtl::Vec3f wi;
-		float pdf;
+		float lightPdf;
 		gmtl::Rayf visibilityRay;
 
-		// Devuelve la luz -> color * (intensidad / (distancia * distancia))
-		Spectrum lightSample = world->mLights.at(lightNumber)->Sample(info.position, wi, pdf, visibilityRay);
+		//// Devuelve la luz -> color * (intensidad / (distancia * distancia))
+		Spectrum lightSample = world->mLights.at(lightNumber)->Sample(info.position, wi, lightPdf, visibilityRay);
 
 		//world->shadow(visibilityRay);
 
-		//Desplazar VisibilityRay sobre la normal para evitar colisiones con el propio objeto
+		////Desplazar VisibilityRay sobre la normal para evitar colisiones con el propio objeto
 		visibilityRay.setOrigin(visibilityRay.getOrigin() + info.normal * 0.001f);
 
 		// Interseccón con la escena
@@ -294,25 +294,11 @@ Spectrum directRadiance(World* world, Ray& ray, IntersectInfo info)
 		// Si no Interseccion
 		if (newIntersectInfo.objectID == -1)
 		{
-			//float intensityCalculated = world->mLights.at(lightNumber)->mIntensity / (visibilityRay.getMaxLength() * visibilityRay.getMaxLength());
-			// Obtener emision de la luz
-			//info.material->BRDF(colorSample, info.position, info.position, info) * max(gmtl::dot(info.normal, wi), 0.0f) / pdf;
-			//Spectrum directLight = calculateDiffuseComponent(world, static_cast<PointLight*>(world->mLights.at(lightNumber)), newIntersectInfo);
-
-			/*gmtl::Vec3f distanceVector = info.position + wi;
-			float squareLightDistanceToCollision = gmtl::lengthSquared(distanceVector);
-			lightSample /= squareLightDistanceToCollision;
-			info.material->Sample(wi, pdf, info);*/
-
-
 			// Multiplicar por BRDF
-			//directLight = directLight * newIntersectInfo.material->BRDF(directLight, info.position, info.position, info);
-			//Spectrum directLight = info.material->BRDF(lightSample, ray.getDir(), ray.getOrigin(), info);
 			Spectrum directLight = info.material->BRDF(lightSample, wi, -ray.getDir(), info);
-			//Spectrum directLight = info.material->BRDF(lightSample, wi, cameraPosition, info);
 
 			// Dividir por PDF de la luz
-			directLight = directLight / pdf;
+			directLight = directLight / lightPdf;
 
 			// Dividir por 1 / numero_luces
 			directLight = directLight / static_cast<float>(1 / world->mLights.size());
@@ -327,13 +313,16 @@ Spectrum directRadiance(World* world, Ray& ray, IntersectInfo info)
 
 Spectrum indirectRadiance(World* world, Ray& ray, IntersectInfo info, int recursivityDepth)
 {
+
+	Spectrum totalIndirectLight = gmtl::Vec3f(0.0f);
+
 	// - Calcular valor aleatorio X
 	float valorContinuacion = ruletaRusa();
+
 
 	// - Si X < ruleta_rusa_p
 	if (valorContinuacion < GO_ON_PROBABILITY)
 	{
-		//Spectrum indirectLight = ((Lambert*)info.material)->Kd_color.GetColor(info);
 		Spectrum indirectLight = gmtl::Vec3f(1.0f, 1.0f, 1.0f);
 
 		// - Calcular una dirección para siguiente rebote
@@ -341,7 +330,6 @@ Spectrum indirectRadiance(World* world, Ray& ray, IntersectInfo info, int recurs
 		float r2 = ruletaRusa();
 
 		float anglePhi = 2 * M_PI * r1;
-		//float angleTheta = acos(r2);
 
 		float valueToSqrt = 1.0f - (r2 * r2);
 
@@ -349,20 +337,18 @@ Spectrum indirectRadiance(World* world, Ray& ray, IntersectInfo info, int recurs
 		float y = sin(anglePhi) * (sqrt(valueToSqrt));
 		float z = r2;
 
-		//gmtl::Point3f positionInDirectionVector = gmtl::Point3f(x, y, z) - info.position; //generateRay(info.position, positionInDirectionVector);
-
-		gmtl::Rayf indirectRay = gmtl::Rayf(info.position, gmtl::Vec3f(x, y, z)); 
-		indirectRay.setOrigin(indirectRay.getOrigin() - info.normal * 0.001f);
+		gmtl::Point3f newOrigin = info.position + info.normal * 0.001f;
+		gmtl::Rayf indirectRay = gmtl::Rayf(newOrigin, gmtl::Vec3f(x, y, z));
 
 		// - Calcular iluminación para ese rayo(traceRay)
 		indirectLight = indirectLight * traceRay(world, indirectRay, recursivityDepth + 1);
 
 		// - Multiplicar iluminación por el BRDF
 		//indirectLight = indirectLight * info.material->BRDF(indirectLight, ray.getDir(), ray.getOrigin(), info);
-		indirectLight = indirectLight * info.material->BRDF(indirectLight, indirectRay.getDir(), ray.getDir(), info);
+		indirectLight = indirectLight * info.material->BRDF(indirectLight, indirectRay.getDir(), -ray.getDir(), info);
 
 		// - Multiplicar por el coseno
-		indirectLight = indirectLight * gmtl::dot(indirectRay.getDir(), info.normal);
+		indirectLight = indirectLight * max(gmtl::dot(info.normal, indirectRay.getDir()), 0.0f);
 
 		// - Dividir iluminación por el PDF
 		gmtl::Vec3f wi;
@@ -374,10 +360,76 @@ Spectrum indirectRadiance(World* world, Ray& ray, IntersectInfo info, int recurs
 		// - Dividir por ruleta_rusa_p
 		indirectLight = indirectLight / GO_ON_PROBABILITY;
 
+			
 		return indirectLight;
 	}
 	return Spectrum(0.0f);
 }
+
+
+Spectrum indirectRadianceMultipleSamples(World* world, Ray& ray, IntersectInfo info, int recursivityDepth)
+{
+	// - Calcular valor aleatorio X
+	float valorContinuacion = ruletaRusa();
+
+	Spectrum totalIndirectLight = gmtl::Vec3f(0.0f);
+
+	// - Si X < ruleta_rusa_p
+	if (valorContinuacion < GO_ON_PROBABILITY)
+	{
+		for (int i = 0; i < NUMBER_SAMPLES; i++)
+		{
+			//Spectrum indirectLight = ((Lambert*)info.material)->Kd_color.GetColor(info);
+			Spectrum indirectLight = gmtl::Vec3f(1.0f, 1.0f, 1.0f);
+
+			// - Calcular una dirección para siguiente rebote
+			float r1 = ruletaRusa();
+			float r2 = ruletaRusa();
+
+			float anglePhi = 2 * M_PI * r1;
+			//float angleTheta = acos(r2);
+
+			float valueToSqrt = 1.0f - (r2 * r2);
+
+			float x = cos(anglePhi) * (sqrt(valueToSqrt));
+			float y = sin(anglePhi) * (sqrt(valueToSqrt));
+			float z = r2;
+
+			//gmtl::Point3f positionInDirectionVector = gmtl::Point3f(x, y, z) - info.position; //generateRay(info.position, positionInDirectionVector);
+
+			gmtl::Rayf indirectRay = gmtl::Rayf(info.position, gmtl::Vec3f(x, y, z));
+			indirectRay.setOrigin(indirectRay.getOrigin() + info.normal * 0.001f);
+
+			// - Calcular iluminación para ese rayo(traceRay)
+			indirectLight = indirectLight * traceRay(world, indirectRay, recursivityDepth + 1);
+
+			// - Multiplicar iluminación por el BRDF
+			//indirectLight = indirectLight * info.material->BRDF(indirectLight, ray.getDir(), ray.getOrigin(), info);
+			indirectLight = indirectLight * info.material->BRDF(indirectLight, -indirectRay.getDir(), ray.getDir(), info);
+
+			// - Multiplicar por el coseno
+			indirectLight = indirectLight * gmtl::dot(indirectRay.getDir(), info.normal);
+
+			// - Dividir iluminación por el PDF
+			gmtl::Vec3f wi;
+			float pdf;
+			info.material->Sample(wi, pdf, info);
+
+			indirectLight = indirectLight / pdf;
+
+			// - Dividir por ruleta_rusa_p
+			indirectLight = indirectLight / GO_ON_PROBABILITY;
+
+			totalIndirectLight += indirectLight;
+		}
+		//return indirectLight;
+
+		return (totalIndirectLight = gmtl::Vec3f(totalIndirectLight[0] / NUMBER_SAMPLES, totalIndirectLight[1] / NUMBER_SAMPLES, totalIndirectLight[2] / NUMBER_SAMPLES));
+	}
+	return Spectrum(0.0f);
+}
+
+
 
 Spectrum traceRay(World* world, Ray& ray, int recursivityDepth)
 {
@@ -386,23 +438,23 @@ Spectrum traceRay(World* world, Ray& ray, int recursivityDepth)
 
 	world->intersect(info, ray);
 
-	if (info.objectID != InvalidObjectID)
+	if (info.objectID != InvalidObjectID && recursivityDepth < 20)
 	{
 		// Calcular iluminacion emitida
 		// no hay materiales emisivos en la practica
 
 		// Calcular iluminacion directa (directRadiance)
 		Spectrum directLight = directRadiance(world, ray, info);
-		//directLight = Spectrum(0.0f);
 
 		// Calcular iluminacion indirecta (indirectRadiance)
 		Spectrum indirectLight = indirectRadiance(world, ray, info, recursivityDepth);
-		//indirectLight = Spectrum(0.0f);
 
 		float distance = sqrt(info.position[0] * info.position[0] + info.position[1] * info.position[1] + info.position[2] * info.position[2]);
 
 		// Iluminacion total = emitida + directa + indirecta
 		return (directLight + indirectLight);
+		//return directLight;
+		//return indirectLight;
 	}
 
 	return Spectrum(0.0f);
