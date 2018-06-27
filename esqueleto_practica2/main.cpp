@@ -442,7 +442,7 @@ Spectrum traceRay(World* world, Ray& ray, int recursivityDepth)
 
 	world->intersect(info, ray);
 
-	if (info.objectID != InvalidObjectID && recursivityDepth < 20)
+	if (info.objectID != InvalidObjectID)
 	{
 		// Calcular iluminacion emitida
 		// no hay materiales emisivos en la practica
