@@ -20,7 +20,7 @@ public:
     virtual Spectrum BRDF(const Spectrum& Li, const gmtl::Vec3f& L, const gmtl::Vec3f& V, const IntersectInfo& info) const
     {
         //return Spectrum(0.0f);
-		return Li * Kd_color.GetColor(info) * (Kd / M_PI);
+		return Li * Kd_color.GetColor(info) * (Kd / M_PI) * gmtl::dot(info.normal, L);
     }
 
 

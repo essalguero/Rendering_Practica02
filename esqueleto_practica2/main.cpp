@@ -38,7 +38,7 @@ const float AMBIENT_INTENSITY = 0.005f;
 
 const float GO_ON_PROBABILITY = 0.1f;
 
-const int NUMBER_SAMPLES = 1024;
+const int NUMBER_SAMPLES = 5;
 
 const int HALTON_NUMBER_1 = 3;
 const int HALTON_NUMBER_2 = 5;
@@ -295,7 +295,7 @@ Spectrum directRadiance(World* world, Ray& ray, IntersectInfo info)
 		if (newIntersectInfo.objectID == -1)
 		{
 			// Multiplicar por BRDF
-			Spectrum directLight = info.material->BRDF(lightSample, wi, -ray.getDir(), info);
+			Spectrum directLight = info.material->BRDF(lightSample, wi, -ray.getDir(), info);// *max(gmtl::dot(info.normal, -wi), 0.0f);
 
 			// Dividir por PDF de la luz
 			directLight = directLight / lightPdf;
@@ -347,8 +347,12 @@ Spectrum indirectRadiance(World* world, Ray& ray, IntersectInfo info, int recurs
 		//indirectLight = indirectLight * info.material->BRDF(indirectLight, ray.getDir(), ray.getOrigin(), info);
 		indirectLight = indirectLight * info.material->BRDF(indirectLight, indirectRay.getDir(), -ray.getDir(), info);
 
+
+		gmtl::Vec3f dirNormalized = indirectRay.getDir();
+		normalize(dirNormalized);
+
 		// - Multiplicar por el coseno
-		indirectLight = indirectLight * max(gmtl::dot(info.normal, indirectRay.getDir()), 0.0f);
+		indirectLight = indirectLight * max(gmtl::dot(info.normal, dirNormalized), 0.0f);
 
 		// - Dividir iluminación por el PDF
 		gmtl::Vec3f wi;
